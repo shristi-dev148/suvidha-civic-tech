@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUVIDHA Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 450px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #218838; }
+        .card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; border-left: 5px solid #28a745; }
+        ul { padding-left: 20px; }
+        .error { color: red; font-size: 14px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-section">
+        <h2>SUVIDHA Login</h2>
+        <input type="text" id="aadhaar" placeholder="12-digit Aadhaar Number">
+        <input type="password" id="otp" placeholder="Enter OTP (1234)">
+        <button onclick="handleLogin()">Login</button>
+        <div id="login-error" class="error"></div>
+    </div>
+
+    <div id="dashboard-section" style="display:none;">
+        <h2 style="color: #007bff;">Welcome, <span id="user-name"></span></h2>
+        
+        <div class="card">
+            <strong>Current Status:</strong>
+            <ul id="services-list"></ul>
+        </div>
+
+        <hr>
+
+        <h3>File a New Complaint</h3>
+        <select id="dept">
+            <option value="Electricity">Electricity Dept</option>
+            <option value="Water">Water Supply</option>
+            <option value="Waste">Waste Management</option>
+        </select>
+        <textarea id="issue" rows="3" placeholder="Describe your problem here..."></textarea>
+        <button onclick="submitComplaint()" style="background: #007bff;">Submit Complaint</button>
+        <p id="msg" style="color: green; font-weight: bold; margin-top: 10px;"></p>
+    </div>
+</div>
+
+<script>
+    const API_URL = "http://127.0.0.1:5000";
+
+    async function handleLogin() {
+        const aadhaar = document.getElementById('aadhaar').value;
+        const otp = document.getElementById('otp').value;
+
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aadhaar, otp })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('dashboard-section').style.display = 'block';
+                document.getElementById('user-name').innerText = data.user.name;
+                
+                const servicesList = document.getElementById('services-list');
+                servicesList.innerHTML = "";
+                for (let [key, value] of Object.entries(data.user.services)) {
+                    servicesList.innerHTML += `<li>${key.toUpperCase()}: <b>${value}</b></li>`;
+                }
+            } else {
+                document.getElementById('login-error').innerText = data.message || "Login Failed";
+            }
+        } catch (err) {
+            document.getElementById('login-error').innerText = "Server not running!";
+        }
+    }
+
+    async function submitComplaint() {
+        const aadhaar = document.getElementById('aadhaar').value;
+        const dept = document.getElementById('dept').value;
+        const issue = document.getElementById('issue').value;
+
+        try {
+            const res = await fetch(`${API_URL}/request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aadhaar, department: dept, issue })
+            });
+
+            if (res.ok) {
+                document.getElementById('msg').innerText = "✅ Complaint Registered!";
+                document.getElementById('issue').value = "";
+            }
+        } catch (err) {
+            alert("Error connecting to server");
+        }
+    }
+</script>
+
+</body>
+</html>
